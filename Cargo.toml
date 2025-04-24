@@ -1,0 +1,8 @@
+[package]
+name = "movie_comment_analyser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex = "1.11.1"
+strsim = "0.11.1"
