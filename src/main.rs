@@ -1,98 +1,154 @@
+use fancy_regex::Regex;
+use serde::Serialize;
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs::{self};
 use std::path::Path;
-use std::io::Write;
-use strsim::jaro_winkler;
 
-fn carregar_adjetivos<P: AsRef<Path>>(caminho: P, negativo: bool) -> HashMap<String, i32> {
-    let mut mapa = HashMap::new();
-    let conteudo = fs::read_to_string(caminho).unwrap_or_default();
-
-    for linha in conteudo.lines() {
-        let partes: Vec<&str> = linha.split('-').map(|s| s.trim()).collect();
-        if partes.len() == 2 {
-            if let Ok(mut valor) = partes[1].parse::<i32>() {
-                if negativo {
-                    valor *= -1;
-                }
-                mapa.insert(partes[0].to_lowercase(), valor);
-            }
-        }
-    }
-
-    mapa
+#[derive(Debug, Serialize)]
+struct DetalheAnalise {
+    trecho: String,
+    nota: i32,
+    intensificador: Option<String>,
+    ironia_detectada: bool,
 }
 
-fn carregar_todos_adjetivos() -> HashMap<String, i32> {
-    let mut mapa = HashMap::new();
-
-    let arquivos = vec![
-        ("adjetivos_filme_positivos.txt", false),
-        ("adjetivos_filme_positivos2.txt", false),
-        ("adjetivos_filme_negativos.txt", true),
-        ("adjetivos_filme_negativos2.txt", true),
-    ];
-
-    for (arquivo, negativo) in arquivos {
-        let novo = carregar_adjetivos(arquivo, negativo);
-        mapa.extend(novo);
-    }
-
-    mapa
+#[derive(Debug, Serialize)]
+struct AnaliseComentario {
+    comentario: String,
+    nota: i32,
+    classificacao: String,
+    detalhes: Vec<DetalheAnalise>,
 }
 
-fn pontuar_comentario(comentario: &str, notas: &HashMap<String, i32>) -> i32 {
-    let comentario = comentario.to_lowercase();
+fn carregar_padrao() -> Regex {
+    Regex::new(
+        r"\b(?:decepcionante|péssimo|ruim|horrível|desastroso|genérico|estranho|bizarro|incrível|bom|legal|divertido|fácil|maravilhoso|ótimo|interessante|fantástico|excepcional|sensacional|show|foda|top|caramba|absurdo|triste|lamentável|impressionante|engraçado|inovador|infantil|chato|tenso|emocionante|mágico|maravilhosa|excepcional|brilhante|inspirador|positivo|negativo|surpreendente|confortável|entediado|muito bom|perfeito|útil|delicioso|adorável|cativante|animado|gostoso|interessante|desagradável|forte|suave|satisfatório|medíocre|impulsivo|agitado|desapontado|maravilhosos)\b"
+    ).unwrap()
+}
+
+fn peso_palavra(palavra: &str) -> i32 {
+    match palavra {
+        "excelente" | "magnífico" | "magníficos" | "magnífica" | "magníficas" |
+        "maravilhoso" | "maravilhosa" | "maravilhosos" | "maravilhosas" |
+        "espetacular" | "espetaculares" |
+        "perfeito" | "perfeitos" | "perfeita" | "perfeitas" |
+        "brilhante" | "inspirador" | "fantástico" |
+        "incrível" | "sensacional" | "excepcional" => 5,
+
+        "ótimo" | "ótimos" | "ótima" | "ótimas" |
+        "bom" | "bons" | "boa" | "boas" |
+        "agradável" | "agradáveis" | "positivo" | "divertido" => 3,
+        
+        "genérico" | "estranho" | "entediado" |
+        "desapontado" => -2,
+
+        "ruim" | "ruins" |
+        "terrível" | "terríveis" |
+        "péssimo" | "péssimos" | "péssima" | "péssimas" |
+        "desagradável" | "desagradáveis" | "bizarro" |
+        "medíocre" | "decepcionante" => -5,
+
+        _ => 0,
+    }
+}
+
+fn aplicar_intensificador(base: i32, intensificador: Option<&str>) -> i32 {
+    match intensificador {
+        Some("extremamente") => base * 2,
+        Some("muito") => base * 2,
+        Some("super") => base * 2,
+        Some("bem") => (base * 3) / 2,
+        _ => base,
+    }
+}
+
+fn pontuar_comentario(comentario: &str) -> AnaliseComentario {
+    let padrao = carregar_padrao();
+    let comentario_minusculo = comentario.to_lowercase();
+    let mut detalhes = Vec::new();
     let mut nota_total = 0;
+    let ironia_detectada = comentario_minusculo.contains("só que não");
 
-    let palavras: Vec<&str> = comentario.split_whitespace().collect();
+    let captures = padrao.captures_iter(&comentario_minusculo);
+    for captura in captures {
+        if let Ok(captura) = captura {
+            if captura.get(0).is_none() {
+                continue;
+            }
+            let trecho = captura.get(0).unwrap().as_str();
+            let palavras: Vec<&str> = trecho.split_whitespace().collect();
+            let mut local_nota = 0;
+            let mut intensificador: Option<String> = None;
+            let mut negado = false;
 
-    for (expressao, valor) in notas {
-        if comentario.contains(expressao) {
-            nota_total += *valor;
-        } else {
-            for palavra in &palavras {
-                if jaro_winkler(palavra, expressao) > 0.95 {
-                    nota_total += *valor;
-                    break;
+            for (i, palavra) in palavras.iter().enumerate() {
+                match *palavra {
+                    "não" => negado = true,
+                    "muito" | "extremamente" | "super" | "bem" => {
+                        intensificador = Some(palavra.to_string());
+                    }
+                    _ => {
+                        let peso = peso_palavra(palavra);
+                        if peso != 0 {
+                            let mut peso_final = aplicar_intensificador(peso, intensificador.as_deref());
+                            if negado {
+                                peso_final *= -1;
+                                negado = false;
+                            }
+                            local_nota += peso_final;
+                            intensificador = None;
+                        }
+                    }
                 }
             }
+
+            detalhes.push(DetalheAnalise {
+                trecho: trecho.to_string(),
+                nota: local_nota,
+                intensificador: intensificador.clone(),
+                ironia_detectada,
+            });
+
+            nota_total += local_nota;
         }
     }
 
-    nota_total
+    if ironia_detectada {
+        nota_total *= -1;
+    }
+
+    AnaliseComentario {
+        comentario: comentario.to_string(),
+        nota: nota_total,
+        classificacao: classificar_comentario(nota_total),
+        detalhes,
+    }
 }
 
-fn classificar_comentario(nota: i32) -> &'static str {
+fn classificar_comentario(nota: i32) -> String {
     match nota {
-        i32::MIN..=-8 => "Muito negativo",
-        -7..=-3 => "Negativo",
-        -2..=2 => "Neutro",
-        3..=7 => "Positivo",
-        8..=i32::MAX => "Muito positivo",
+        i32::MIN..=-8 => "Muito negativo".to_string(),
+        -7..=-3 => "Negativo".to_string(),
+        -2..=2 => "Neutro".to_string(),
+        3..=7 => "Positivo".to_string(),
+        8..=i32::MAX => "Muito positivo".to_string(),
     }
 }
 
 fn processar_comentarios() {
     let comentarios = fs::read_to_string("comentarios.txt").unwrap_or_default();
-    let notas = carregar_todos_adjetivos();
-    
-    fs::create_dir_all("resultados").expect("Erro ao criar a pasta de resultados");
-    
-    let mut arquivo = File::create("resultados/comentarios_avaliados.txt")
-        .expect("Erro ao criar arquivo de resultados");
 
-    for (i, comentario) in comentarios.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+    let mut resultados = Vec::new();
+
+    for comentario in comentarios.lines().filter(|l| !l.trim().is_empty()) {
         let comentario = comentario.trim();
-        let nota = pontuar_comentario(comentario, &notas);
-        let classificacao = classificar_comentario(nota);
-
-        println!("{}º Comentário: \"{}\"", i + 1, comentario);
-        println!("Nota: {}\nClassificação: {}\n", nota, classificacao);
-
-        let linha = format!("{} | Nota: {} | Classificação: {}\n", comentario, nota, classificacao);
-        arquivo.write_all(linha.as_bytes()).expect("Erro ao escrever no arquivo");
+        let analise = pontuar_comentario(comentario);
+        resultados.push(analise);
     }
+
+    // Salvar o resultado como JSON
+    let json_resultado = serde_json::to_string_pretty(&resultados).expect("Erro ao converter para JSON");
+    fs::write("resultados/comentarios_avaliados.json", json_resultado).expect("Erro ao escrever o arquivo JSON");
 }
 
 fn main() {
