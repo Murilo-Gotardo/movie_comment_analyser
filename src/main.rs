@@ -1,8 +1,6 @@
 use fancy_regex::Regex;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::fs::{self};
-use std::path::Path;
 
 #[derive(Debug, Serialize)]
 struct DetalheAnalise {
@@ -81,7 +79,7 @@ fn pontuar_comentario(comentario: &str) -> AnaliseComentario {
             let mut intensificador: Option<String> = None;
             let mut negado = false;
 
-            for (i, palavra) in palavras.iter().enumerate() {
+            for (_i, palavra) in palavras.iter().enumerate() {
                 match *palavra {
                     "não" => negado = true,
                     "muito" | "extremamente" | "super" | "bem" => {
