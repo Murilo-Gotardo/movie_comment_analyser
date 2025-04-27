@@ -1,24 +1,21 @@
 use std::collections::HashMap;
-use std::fs;
-use regex::Regex;
+use std::fs::{self, File};
+use std::path::Path;
+use std::io::Write;
 use strsim::jaro_winkler;
 
-/// Lê um arquivo de notas e converte para um HashMap.
-/// Se `inverter` for true, os valores serão multiplicados por -1.
-fn carregar_notas(path: &str, inverter: bool) -> HashMap<String, i32> {
+fn carregar_adjetivos<P: AsRef<Path>>(caminho: P, negativo: bool) -> HashMap<String, i32> {
     let mut mapa = HashMap::new();
-    let regex = Regex::new(r"^\s*(.+?)\s*-\s*(-?\d+)\s*$").unwrap();
+    let conteudo = fs::read_to_string(caminho).unwrap_or_default();
 
-    if let Ok(conteudo) = fs::read_to_string(path) {
-        for linha in conteudo.lines() {
-            if let Some(captura) = regex.captures(linha) {
-                let palavra = captura[1].trim().to_lowercase();
-                if let Ok(mut valor) = captura[2].parse::<i32>() {
-                    if inverter {
-                        valor *= -1;
-                    }
-                    mapa.insert(palavra, valor);
+    for linha in conteudo.lines() {
+        let partes: Vec<&str> = linha.split('-').map(|s| s.trim()).collect();
+        if partes.len() == 2 {
+            if let Ok(mut valor) = partes[1].parse::<i32>() {
+                if negativo {
+                    valor *= -1;
                 }
+                mapa.insert(partes[0].to_lowercase(), valor);
             }
         }
     }
@@ -26,73 +23,36 @@ fn carregar_notas(path: &str, inverter: bool) -> HashMap<String, i32> {
     mapa
 }
 
-/// Carrega todos os arquivos de notas em um único HashMap
-fn carregar_todas_as_notas() -> HashMap<String, i32> {
-    let mut total = HashMap::new();
+fn carregar_todos_adjetivos() -> HashMap<String, i32> {
+    let mut mapa = HashMap::new();
 
-    let positivos = [
-        "adjetivos_filme_positivos.txt",
-        "adjetivos_filme_positivos2.txt",
+    let arquivos = vec![
+        ("adjetivos_filme_positivos.txt", false),
+        ("adjetivos_filme_positivos2.txt", false),
+        ("adjetivos_filme_negativos.txt", true),
+        ("adjetivos_filme_negativos2.txt", true),
     ];
 
-    let negativos = [
-        "adjetivos_filme_negativos.txt",
-        "adjetivos_filme_negativos2.txt",
-    ];
-
-    for arquivo in positivos.iter() {
-        total.extend(carregar_notas(arquivo, false));
+    for (arquivo, negativo) in arquivos {
+        let novo = carregar_adjetivos(arquivo, negativo);
+        mapa.extend(novo);
     }
 
-    for arquivo in negativos.iter() {
-        total.extend(carregar_notas(arquivo, true));
-    }
-
-    total
+    mapa
 }
 
-/// Lê os comentários do arquivo (separados por linhas em branco)
-fn carregar_comentarios(path: &str) -> Vec<String> {
-    let mut comentarios = Vec::new();
-
-    if let Ok(conteudo) = fs::read_to_string(path) {
-        for bloco in conteudo.split("\n\n") {
-            let bloco = bloco.trim();
-            if !bloco.is_empty() {
-                comentarios.push(bloco.to_string());
-            }
-        }
-    }
-
-    comentarios
-}
-
-/// Calcula a nota total de um comentário com base nas palavras
 fn pontuar_comentario(comentario: &str, notas: &HashMap<String, i32>) -> i32 {
     let comentario = comentario.to_lowercase();
     let mut nota_total = 0;
-    let mut ja_usados = vec![false; comentario.len()];
+
+    let palavras: Vec<&str> = comentario.split_whitespace().collect();
 
     for (expressao, valor) in notas {
-        if let Some(mut i) = comentario.find(expressao) {
-            while i < comentario.len() {
-                let fim = i + expressao.len();
-                if ja_usados[i..fim.min(ja_usados.len())].iter().all(|&b| !b) {
-                    nota_total += *valor;
-                    for j in i..fim.min(ja_usados.len()) {
-                        ja_usados[j] = true;
-                    }
-                }
-                if let Some(prox) = comentario[i + 1..].find(expressao) {
-                    i = i + 1 + prox;
-                } else {
-                    break;
-                }
-            }
+        if comentario.contains(expressao) {
+            nota_total += *valor;
         } else {
-            for palavra in comentario.split_whitespace() {
-                let score = jaro_winkler(palavra, expressao);
-                if score > 0.95 {
+            for palavra in &palavras {
+                if jaro_winkler(palavra, expressao) > 0.95 {
                     nota_total += *valor;
                     break;
                 }
@@ -103,12 +63,38 @@ fn pontuar_comentario(comentario: &str, notas: &HashMap<String, i32>) -> i32 {
     nota_total
 }
 
-fn main() {
-    let mapa_de_notas = carregar_todas_as_notas();
-    let comentarios = carregar_comentarios("comentarios.txt");
-
-    for comentario in comentarios {
-        let nota = pontuar_comentario(&comentario, &mapa_de_notas);
-        println!("Comentário: \"{}\"\nNota total: {}\n", comentario, nota);
+fn classificar_comentario(nota: i32) -> &'static str {
+    match nota {
+        i32::MIN..=-8 => "Muito negativo",
+        -7..=-3 => "Negativo",
+        -2..=2 => "Neutro",
+        3..=7 => "Positivo",
+        8..=i32::MAX => "Muito positivo",
     }
+}
+
+fn processar_comentarios() {
+    let comentarios = fs::read_to_string("comentarios.txt").unwrap_or_default();
+    let notas = carregar_todos_adjetivos();
+    
+    fs::create_dir_all("resultados").expect("Erro ao criar a pasta de resultados");
+    
+    let mut arquivo = File::create("resultados/comentarios_avaliados.txt")
+        .expect("Erro ao criar arquivo de resultados");
+
+    for (i, comentario) in comentarios.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+        let comentario = comentario.trim();
+        let nota = pontuar_comentario(comentario, &notas);
+        let classificacao = classificar_comentario(nota);
+
+        println!("{}º Comentário: \"{}\"", i + 1, comentario);
+        println!("Nota: {}\nClassificação: {}\n", nota, classificacao);
+
+        let linha = format!("{} | Nota: {} | Classificação: {}\n", comentario, nota, classificacao);
+        arquivo.write_all(linha.as_bytes()).expect("Erro ao escrever no arquivo");
+    }
+}
+
+fn main() {
+    processar_comentarios();
 }
