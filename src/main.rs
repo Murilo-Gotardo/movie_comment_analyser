@@ -1,5 +1,6 @@
 use fancy_regex::Regex;
 use serde::Serialize;
+use strsim::jaro_winkler;
 use std::fs::{self};
 
 #[derive(Debug, Serialize)]
@@ -20,7 +21,7 @@ struct AnaliseComentario {
 
 fn carregar_padrao() -> Regex {
     Regex::new(
-        r"\b(?:decepcionante|péssimo|ruim|horrível|desastroso|genérico|estranho|bizarro|incrível|bom|legal|divertido|fácil|maravilhoso|ótimo|interessante|fantástico|excepcional|sensacional|show|foda|top|caramba|absurdo|triste|lamentável|impressionante|engraçado|inovador|infantil|chato|tenso|emocionante|mágico|maravilhosa|excepcional|brilhante|inspirador|positivo|negativo|surpreendente|confortável|entediado|muito bom|perfeito|útil|delicioso|adorável|cativante|animado|gostoso|interessante|desagradável|forte|suave|satisfatório|medíocre|impulsivo|agitado|desapontado|maravilhosos)\b"
+        r"\b(?:muito bom|super legal|extremamente bom|bem legal|tão bom|demais bom|bastante bom|altamente legal|totalmente bom|incrivelmente bom|absurdamente bom|fora de série bom|decepcionante|péssimo|ruim|horrível|desastroso|genérico|estranho|bizarro|incrível|bom|legal|divertido|fácil|maravilhoso|ótimo|interessante|fantástico|excepcional|sensacional|show|foda|top|caramba|absurdo|triste|lamentável|impressionante|engraçado|inovador|infantil|chato|tenso|emocionante|mágico|maravilhosa|excepcional|brilhante|inspirador|positivo|negativo|surpreendente|confortável|entediado|perfeito|útil|delicioso|adorável|cativante|animado|gostoso|interessante|desagradável|forte|suave|satisfatório|medíocre|impulsivo|agitado|desapontado|maravilhosos|excelente|magnífico|magníficos|magnífica|magníficas|maravilhoso|maravilhosa|maravilhosos|maravilhosas|espetacular|espetaculares|perfeito|perfeitos|perfeita|perfeitas|brilhante|inspirador|fantástico|incrível|sensacional|excepcional)\b|\b(?:extremamente|muito|super|bem)\s?(?:bom|boa|boas|bons|maravilhoso|maravilhosa|maravilhosos|maravilhosas|excelente|magnífico|magníficos|magnífica|magníficas|espetacular|espetaculares|perfeito|perfeitos|perfeita|perfeitas|brilhante|inspirador|fantástico|incrível|sensacional|excepcional|ótimo|ótimos|ótima|ótimas|agradável|agradáveis|positivo|divertido|ruim|péssimo|horrível|medíocre|decepcionante|desagradável|genérico|estranho|desapontado)\b"
     ).unwrap()
 }
 
@@ -36,7 +37,7 @@ fn peso_palavra(palavra: &str) -> i32 {
         "ótimo" | "ótimos" | "ótima" | "ótimas" |
         "bom" | "bons" | "boa" | "boas" |
         "agradável" | "agradáveis" | "positivo" | "divertido" => 3,
-        
+
         "genérico" | "estranho" | "entediado" |
         "desapontado" => -2,
 
@@ -48,6 +49,10 @@ fn peso_palavra(palavra: &str) -> i32 {
 
         _ => 0,
     }
+}
+
+fn similaridade_palavras(palavra1: &str, palavra2: &str) -> f64 {
+    jaro_winkler(palavra1, palavra2)
 }
 
 fn aplicar_intensificador(base: i32, intensificador: Option<&str>) -> i32 {
@@ -94,7 +99,15 @@ fn pontuar_comentario(comentario: &str) -> AnaliseComentario {
                                 negado = false;
                             }
                             local_nota += peso_final;
-                            intensificador = None;
+                            
+                            for outro_palavra in palavras.iter() {
+                                if *outro_palavra != *palavra {
+                                    let similaridade = similaridade_palavras(palavra, outro_palavra);
+                                    if similaridade > 0.95 {
+                                        local_nota += peso_final / 2;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -107,6 +120,8 @@ fn pontuar_comentario(comentario: &str) -> AnaliseComentario {
                 ironia_detectada,
             });
 
+            intensificador = None;
+            
             nota_total += local_nota;
         }
     }
