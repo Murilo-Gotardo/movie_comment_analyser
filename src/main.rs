@@ -21,12 +21,12 @@ struct AnaliseComentario {
 
 fn carregar_padrao() -> Regex {
     Regex::new(
-        r"\b(?:muito bom|super legal|extremamente bom|bem legal|tão bom|demais bom|bastante bom|altamente legal|totalmente bom|incrivelmente bom|absurdamente bom|fora de série bom|perfeito|extraordinário|excelente|ótimo|maravilhoso|fantástico|genial|transcendental|primoroso|formidável|excepcional|incrível|inesquecível|magistral|fenomenal|poderoso|sensacional|esplêndido|bonito|emocionante|profundo|expressivo|impactante|delicado|impressionante|grandioso|épico|exuberante|fascinante|cativante|encantador|envolvente|apaixonante|carismático|reflexivo|surpreendente|tocante|instigante|revolucionário|inovador|memorável|emocional|realista|comovente|criativo|dinâmico|cinematográfico|ousado|agradável|divertido|acolhedor|interessante|amigável|equilibrado|engajante|complexo|ambicioso|fofo|engraçado|simpático|doce|autêntico|original|eficaz|poético|relevante|maduro|notável|leve|bom|bons|perturbador|sinistro|grotesco|medonho|anêmico|deplorável|desumano|intolerante|horrível|horrendo|doentio|indigesto|desfigurando|desfigurante|arrogante|metido|tóxico|inexpressivo|mortificado|medíocre|ordinário|péssimo|trágico|ridículo|ultrapassado|careta|anticlimático|pífio|pretensioso|problemático|arrastado|apático|genérico|desconexo|confuso|desinteressante|pesado|superestimado|obsoleto|datado|melancólico|enjoativo|estranho|inútil|pobre|insensível|desinformação|tendencioso|malicioso|dispensável|disperso|fragmentado|inconsistente|inconsistência|cansativo|frouxo|exagerado|simplista|vacilante|irresponsável|desconfortável|turbulento|incapaz|inepto|vazio|preguiçoso|repetitivo|desgastante|impróprio|desanimado|desanimador|robotizado|limitado|entediante|tedioso|superficial|inferior|desgastado|apagado|desajeitado|rígido|falso|inverossímil|cru|secundário|artificial|amador|despreparado|malfeito|precário|desprovido|clichê|afobado|desnecessário|imperceptível|penoso|óbvio|batido|piegas|triste|decepcionante|banal|banalizado|exaurido|chato|fraco|previsível|vago|incômodo|áspero|tosco|grosseiro|rudimentar|ralo|raso|infantil|ingênuo|redundante|quebrado|vergonhoso|tosquinho)\b"
+        r"\b(?:muito bom|super legal|extremamente bom|bem legal|tão bom|demais bom|bastante bom|altamente legal|totalmente bom|incrivelmente bom|absurdamente bom|fora de série bom|perfeito|obra prima|extraordinário|excelente|ótimo|maravilhoso|fantástico|genial|transcendental|primoroso|formidável|excepcional|incrível|inesquecível|magistral|fenomenal|poderoso|sensacional|esplêndido|bonito|emocionante|profundo|expressivo|impactante|delicado|impressionante|grandioso|épico|exuberante|fascinante|cativante|encantador|envolvente|apaixonante|carismático|reflexivo|surpreendente|tocante|instigante|revolucionário|inovador|memorável|emocional|realista|comovente|criativo|dinâmico|cinematográfico|ousado|amar|agradável|divertido|acolhedor|interessante|amigável|equilibrado|engajante|complexo|ambicioso|fofo|engraçado|simpático|doce|autêntico|original|eficaz|poético|relevante|maduro|notável|leve|bom|bons|legal|legalzinho|curtindo|perturbador|sinistro|grotesco|medonho|anêmico|deplorável|desumano|intolerante|horrível|horrendo|doentio|indigesto|desfigurando|desfigurante|arrogante|metido|tóxico|inexpressivo|mortificado|medíocre|ordinário|péssimo|trágico|ridículo|ultrapassado|careta|anticlimático|pífio|pretensioso|problemático|arrastado|apático|genérico|desconexo|confuso|desinteressante|pesado|superestimado|obsoleto|datado|melancólico|enjoativo|estranho|inútil|pobre|insensível|desinformação|tendencioso|malicioso|dispensável|disperso|fragmentado|inconsistente|inconsistência|cansativo|frouxo|exagerado|simplista|vacilante|irresponsável|desconfortável|turbulento|incapaz|inepto|vazio|preguiçoso|repetitivo|desgastante|impróprio|desanimado|desanimador|robotizado|limitado|entediante|tedioso|superficial|inferior|desgastado|apagado|desajeitado|rígido|falso|inverossímil|cru|secundário|artificial|amador|despreparado|malfeito|precário|desprovido|clichê|afobado|desnecessário|imperceptível|penoso|óbvio|batido|piegas|triste|decepcionante|banal|banalizado|exaurido|chato|fraco|previsível|vago|incômodo|áspero|tosco|grosseiro|rudimentar|ralo|raso|infantil|ingênuo|redundante|quebrado|vergonhoso|tosquinho)\b"
     ).unwrap()
 }
 
 fn peso_palavra(palavra: &str) -> i32 {    match palavra {
-    "perfeito" => 10,
+    "perfeito" | "obra prima" => 10,
 
     "extraordinário" => 8,
 
@@ -42,7 +42,7 @@ fn peso_palavra(palavra: &str) -> i32 {    match palavra {
     "cativante" | "encantador" | "envolvente" | "apaixonante" | "carismático" |
     "reflexivo" | "surpreendente" | "tocante" | "instigante" | "revolucionário" |
     "inovador" | "memorável" | "emocional" | "realista" | "comovente" |
-    "criativo" | "dinâmico" | "cinematográfico" | "ousado" => 4,
+    "criativo" | "dinâmico" | "cinematográfico" | "ousado" | "amar" => 4,
 
     "agradável" | "divertido" | "acolhedor" | "interessante" |
     "amigável" | "equilibrado" | "engajante" | "complexo" | "ambicioso" => 3,
@@ -50,7 +50,7 @@ fn peso_palavra(palavra: &str) -> i32 {    match palavra {
     "fofo" | "engraçado" | "simpático" | "doce" | "autêntico" | "original" |
     "eficaz" | "poético" | "relevante" | "maduro" | "notável" => 2,
 
-    "leve" | "bom" | "bons" => 1,
+    "leve" | "bom" | "bons" | "legal" | "legalzinho" | "curtindo" => 1,
 
     // --- Palavras negativas ---
 
