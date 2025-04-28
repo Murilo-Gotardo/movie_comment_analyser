@@ -21,34 +21,79 @@ struct AnaliseComentario {
 
 fn carregar_padrao() -> Regex {
     Regex::new(
-        r"\b(?:muito bom|super legal|extremamente bom|bem legal|tão bom|demais bom|bastante bom|altamente legal|totalmente bom|incrivelmente bom|absurdamente bom|fora de série bom|decepcionante|péssimo|ruim|horrível|desastroso|genérico|estranho|bizarro|incrível|bom|legal|divertido|fácil|maravilhoso|ótimo|interessante|fantástico|excepcional|sensacional|show|foda|top|caramba|absurdo|triste|lamentável|impressionante|engraçado|inovador|infantil|chato|tenso|emocionante|mágico|maravilhosa|excepcional|brilhante|inspirador|positivo|negativo|surpreendente|confortável|entediado|perfeito|útil|delicioso|adorável|cativante|animado|gostoso|interessante|desagradável|forte|suave|satisfatório|medíocre|impulsivo|agitado|desapontado|maravilhosos|excelente|magnífico|magníficos|magnífica|magníficas|maravilhoso|maravilhosa|maravilhosos|maravilhosas|espetacular|espetaculares|perfeito|perfeitos|perfeita|perfeitas|brilhante|inspirador|fantástico|incrível|sensacional|excepcional)\b|\b(?:extremamente|muito|super|bem)\s?(?:bom|boa|boas|bons|maravilhoso|maravilhosa|maravilhosos|maravilhosas|excelente|magnífico|magníficos|magnífica|magníficas|espetacular|espetaculares|perfeito|perfeitos|perfeita|perfeitas|brilhante|inspirador|fantástico|incrível|sensacional|excepcional|ótimo|ótimos|ótima|ótimas|agradável|agradáveis|positivo|divertido|ruim|péssimo|horrível|medíocre|decepcionante|desagradável|genérico|estranho|desapontado)\b"
+        r"\b(?:muito bom|super legal|extremamente bom|bem legal|tão bom|demais bom|bastante bom|altamente legal|totalmente bom|incrivelmente bom|absurdamente bom|fora de série bom|perfeito|extraordinário|excelente|ótimo|maravilhoso|fantástico|genial|transcendental|primoroso|formidável|excepcional|incrível|inesquecível|magistral|fenomenal|poderoso|sensacional|esplêndido|bonito|emocionante|profundo|expressivo|impactante|delicado|impressionante|grandioso|épico|exuberante|fascinante|cativante|encantador|envolvente|apaixonante|carismático|reflexivo|surpreendente|tocante|instigante|revolucionário|inovador|memorável|emocional|realista|comovente|criativo|dinâmico|cinematográfico|ousado|agradável|divertido|acolhedor|interessante|amigável|equilibrado|engajante|complexo|ambicioso|fofo|engraçado|simpático|doce|autêntico|original|eficaz|poético|relevante|maduro|notável|leve|bom|bons|perturbador|sinistro|grotesco|medonho|anêmico|deplorável|desumano|intolerante|horrível|horrendo|doentio|indigesto|desfigurando|desfigurante|arrogante|metido|tóxico|inexpressivo|mortificado|medíocre|ordinário|péssimo|trágico|ridículo|ultrapassado|careta|anticlimático|pífio|pretensioso|problemático|arrastado|apático|genérico|desconexo|confuso|desinteressante|pesado|superestimado|obsoleto|datado|melancólico|enjoativo|estranho|inútil|pobre|insensível|desinformação|tendencioso|malicioso|dispensável|disperso|fragmentado|inconsistente|inconsistência|cansativo|frouxo|exagerado|simplista|vacilante|irresponsável|desconfortável|turbulento|incapaz|inepto|vazio|preguiçoso|repetitivo|desgastante|impróprio|desanimado|desanimador|robotizado|limitado|entediante|tedioso|superficial|inferior|desgastado|apagado|desajeitado|rígido|falso|inverossímil|cru|secundário|artificial|amador|despreparado|malfeito|precário|desprovido|clichê|afobado|desnecessário|imperceptível|penoso|óbvio|batido|piegas|triste|decepcionante|banal|banalizado|exaurido|chato|fraco|previsível|vago|incômodo|áspero|tosco|grosseiro|rudimentar|ralo|raso|infantil|ingênuo|redundante|quebrado|vergonhoso|tosquinho)\b"
     ).unwrap()
 }
 
-fn peso_palavra(palavra: &str) -> i32 {
-    match palavra {
-        "excelente" | "magnífico" | "magníficos" | "magnífica" | "magníficas" |
-        "maravilhoso" | "maravilhosa" | "maravilhosos" | "maravilhosas" |
-        "espetacular" | "espetaculares" |
-        "perfeito" | "perfeitos" | "perfeita" | "perfeitas" |
-        "brilhante" | "inspirador" | "fantástico" |
-        "incrível" | "sensacional" | "excepcional" => 5,
+fn peso_palavra(palavra: &str) -> i32 {    match palavra {
+    "perfeito" => 10,
 
-        "ótimo" | "ótimos" | "ótima" | "ótimas" |
-        "bom" | "bons" | "boa" | "boas" |
-        "agradável" | "agradáveis" | "positivo" | "divertido" => 3,
+    "extraordinário" => 8,
 
-        "genérico" | "estranho" | "entediado" |
-        "desapontado" => -2,
+    "excelente" | "ótimo" | "maravilhoso" | "fantástico" | "genial" | "transcendental" |
+    "primoroso" | "formidável" | "excepcional" | "incrível" => 7,
 
-        "ruim" | "ruins" |
-        "terrível" | "terríveis" |
-        "péssimo" | "péssimos" | "péssima" | "péssimas" |
-        "desagradável" | "desagradáveis" | "bizarro" |
-        "medíocre" | "decepcionante" => -5,
+    "inesquecível" | "magistral" | "fenomenal" | "poderoso" | "sensacional" | "esplêndido" => 6,
 
-        _ => 0,
-    }
+    "bonito" | "emocionante" | "profundo" | "expressivo" | "impactante" |
+    "delicado" | "impressionante" | "grandioso" | "épico" | "exuberante" |
+    "fascinante" => 5,
+
+    "cativante" | "encantador" | "envolvente" | "apaixonante" | "carismático" |
+    "reflexivo" | "surpreendente" | "tocante" | "instigante" | "revolucionário" |
+    "inovador" | "memorável" | "emocional" | "realista" | "comovente" |
+    "criativo" | "dinâmico" | "cinematográfico" | "ousado" => 4,
+
+    "agradável" | "divertido" | "acolhedor" | "interessante" |
+    "amigável" | "equilibrado" | "engajante" | "complexo" | "ambicioso" => 3,
+
+    "fofo" | "engraçado" | "simpático" | "doce" | "autêntico" | "original" |
+    "eficaz" | "poético" | "relevante" | "maduro" | "notável" => 2,
+
+    "leve" | "bom" | "bons" => 1,
+
+    // --- Palavras negativas ---
+
+    "perturbador" => -8,
+
+    "sinistro" | "grotesco" | "medonho" | "anêmico" | "deplorável" | "desumano" | "intolerante" => -7,
+
+    "horrível" | "horrendo" | "doentio" | "indigesto" |
+    "desfigurando" | "desfigurante" | "arrogante" | "metido" |
+    "tóxico" | "inexpressivo" | "mortificado" | "medíocre" | "ordinário" => -6,
+
+    "péssimo" | "trágico" | "ridículo" | "ultrapassado" | "careta" |
+    "anticlimático" | "pífio" | "pretensioso" | "problemático" |
+    "arrastado" | "apático" => -5,
+
+    "genérico" | "desconexo" | "confuso" | "desinteressante" |
+    "pesado" | "superestimado" | "obsoleto" | "datado" |
+    "melancólico" | "enjoativo" | "estranho" | "inútil" | "pobre" |
+    "insensível" | "desinformação" | "tendencioso" | "malicioso" |
+    "dispensável" | "disperso" | "fragmentado" | "inconsistente" |
+    "inconsistência" => -4,
+
+    "cansativo" | "frouxo" | "exagerado" | "simplista" |
+    "vacilante" | "irresponsável" | "desconfortável" | "turbulento" |
+    "incapaz" | "inepto" | "vazio" | "preguiçoso" | "repetitivo" |
+    "desgastante" | "impróprio" | "desanimado" | "desanimador" |
+    "robotizado" | "limitado" => -3,
+
+    "entediante" | "tedioso" | "superficial" | "inferior" |
+    "desgastado" | "apagado" | "desajeitado" | "rígido" | "falso" |
+    "inverossímil" | "cru" | "secundário" | "artificial" | "amador" |
+    "despreparado" | "malfeito" | "precário" | "desprovido" |
+    "clichê" | "afobado" | "desnecessário" | "imperceptível" |
+    "penoso" | "óbvio" | "batido" | "piegas" | "triste" |
+    "decepcionante" | "banal" | "banalizado" | "exaurido" => -2,
+
+    "chato" | "fraco" | "previsível" | "vago" | "incômodo" |
+    "áspero" | "tosco" | "grosseiro" | "rudimentar" | "ralo" |
+    "raso" | "infantil" | "ingênuo" | "redundante" | "quebrado" |
+    "vergonhoso" | "tosquinho" => -1,
+
+    _ => 0,
+}
 }
 
 fn similaridade_palavras(palavra1: &str, palavra2: &str) -> f64 {
